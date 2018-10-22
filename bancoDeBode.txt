@@ -1,0 +1,443 @@
+
+Ação Automatica
+
+pasta_fluxo.NR_CONTROLE_FLUXO
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------
+
+
+Ele Pega o tipo e o Sub-Tipo de Pasta
+
+pasta.NR_PASTA   condição "igual"  [NR_PASTA]
+
+-----------------------------------------------------------------------------------------------------------------------------------------
+
+Filtro no Retorno de integração que serve para pegar o numero da pasta.
+
+
+Origem -> pasta.NR_PASTA	condição "igual"   =wget('NR_PASTA','C')
+
+-----------------------------------------------------------------------------------------------------------------------------------------
+
+
+Query do delete no agendamento do gatilho
+delete from tabela_grid where id_tabela in (select id_tabela from tabela where id_tabela_conf = 229)
+
+-----------------------------------------------------------------------------------------------------------------------------------------
+
+Query Leandrão para pegar os campos certos no filtro do cancelar contrato.
+
+=iif(! empty(wget('GNUMERO_CONTRATO_FIN_ENTRADA')),wget('GNUMERO_CONTRATO_FIN_ENTRADA'),wget('GNUMERO_CONTRATO_FINANCEIRO_ENT','C'))
+
+=iif(! empty(wget('GNUMERO_CONTRATO_FIN_ENTRADA')),wget('GNUMERO_CONTRATO_FIN_ENTRADA'),wget('GNUMERO_CONTRATO_FINANCEIRO_ENT','C'))
+
+-----------------------------------------------------------------------------------------------------------------------------------------
+
+DROP VIEW vwvalorressarcidos;
+
+CREATE VIEW vwvalorressarcidos AS SELECT 
+pasta.NM_ANO FL_ANO,
+pasta.NM_NSINISTRO NR_SINISTRO,
+pasta.NM_ORDEM NR_ORDEM,
+pasta.NM_RAMO NM_RAMO,
+PASTA.NR_PASTA NR_PASTA,
+sum(pasta_grid_generica_numeric.VL_VALOR) VL_TOTAL_PARCELAS
+FROM pasta_grid_generica
+left join pasta_grid_generica_char STATUS on STATUS.ID_GRID = pasta_grid_generica.ID_GRID AND STATUS.ID_COMP_ATIVIDADE = 2790     
+left join pasta_grid_generica_grid on pasta_grid_generica.ID_GRID = pasta_grid_generica_grid.ID_GRID AND pasta_grid_generica_grid.ID_COMP_ATIVIDADE = 2223     
+left join pasta_grid_generica_date on pasta_grid_generica_date.ID_GRID = pasta_grid_generica_grid.ID_GRID_REFERENCIA AND pasta_grid_generica_date.ID_COMP_ATIVIDADE = 2224     
+left join pasta_grid_generica_numeric on pasta_grid_generica_numeric.ID_GRID = pasta_grid_generica_grid.ID_GRID_REFERENCIA AND pasta_grid_generica_numeric.ID_COMP_ATIVIDADE = 542     
+left join pasta_porto_auto pasta on pasta.NR_PASTA = pasta_grid_generica.NR_PASTA     
+left join pasta_grid_generica_char STAT on stat.id_grid = pasta_grid_generica_grid.ID_GRID_REFERENCIA AND stat.ID_COMP_ATIVIDADE = 2225
+where pasta_grid_generica.ID_COMP_ATIVIDADE = 2201 AND stat.NM_VALOR LIKE 'Pago'
+group by NM_NSINISTRO, NM_RAMO, NM_ANO, NM_ORDEM, PASTA.NR_PASTA;
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------
+Pesquisar protocolo 
+
+
+xrb2?REPORT=rel_log_erro_detalhado_gr5&ACTION=open&ID_ERRO=669246
+
+-----------------------------------------------------------------------------------------------------------------------------------------
+
+//XDATA
+function BuscarCPF(fcId, fcText, fcName){
+
+    if (parseInt(fcId) > 0){
+        var lcParam = 'HASH=655634124&N1='+fcId;
+        Ajax({'Url': top.waction + '/xpotso.ajx', 'Parameter': lcParam, 'Function': ReturnBuscarCPF, 'Descricao': 'Carregando dados pessoa'});    
+    }
+}
+
+function ReturnBuscarCPF(faResp){
+
+    if (faResp.length > 1){
+        if (document.getElementById('GCPF_PROGRAMADOR')){
+            document.getElementById('GCPF_PROGRAMADOR').value = faResp[1][0]
+        }        
+    }
+}
+
+//XGRAVACAO
+//Validacao
+var lnControle = parseInt(document.getElementById('GGPROGRAMADORQUALQUER').value);
+var lcCpf = document.getElementById('GCPF_PROGRAMADOR').value;
+if (lnControle > 0 && lcCpf.length > 0){
+    var lcParam = 'HASH=655727125&P1='+lcCpf+'&P2=2&P3='+lnControle;
+    Ajax({'Url': top.waction + '/xrekoto', 'Parameter': lcParam, 'Function': ReturnGravarCPF, 'Descricao': 'Gravando dados pessoa'});    
+}
+
+function ReturnGravarCPF(faResp){
+    console.log(faResp[0]);
+}
+
+//XDELETE
+var lnControle = parseInt(document.getElementById('GGPROGRAMADORQUALQUER').value);
+var lcCpf = document.getElementById('GCPF_PROGRAMADOR').value;
+if (lnControle > 0 && lcCpf.length > 0){
+    var lcParam = 'HASH=655330126&P1='+lcCpf+'&P2=2&P3='+lnControle;
+    Ajax({'Url': top.waction + '/xsenya.ajx', 'Parameter': lcParam, 'Function': ReturnDeletarCPF, 'Descricao': 'Deletando e gravando dados pessoa'});    
+}
+
+function ReturnDeletarCPF(faResp){
+    console.log(faResp[0]);
+}
+
+function CarregaGridProgramador(){
+    var lcParam = 'HASH=658302127';
+    Ajax({'Url': top.waction + '/xpotso.ajx', 'Parameter': lcParam, 'Function': ReturnCarregaGridProgramador, 'Descricao': 'Carregando grid Programador'});    
+}
+
+function ReturnCarregaGridProgramador(faResp){
+
+    var loComponent = eval(top.gcAtividadeComponente);
+
+    var lcJson = '[[["NR_ORDEM","WFIELD","MN_NOME_COMP_GENERICO","TP_COMP_ATIVIDADE","ID_COMP_ATIVIDADE","WTABLE","TP_COMP_GENERICO","FL_TIPO_SELECT","NM_QUERY","SEQUENCIA","TP_PESSOA","NM_CALC_FORMULA","FL_ATUALIZACAO_MONETARIA","NM_FIELD_INDICE","NM_FIELD_BASE","NM_FIELD_REF","TXT_RELACIONAMENTO","FL_TOTALIZAR_GRID","WTABLE_APOIO","WFIELD_APOIO","ID_QUERY","HASHQUERY","HASHQUERY_COMP","FL_LISTA_GRID_FIXA","ID_PESSOA","FL_ORDEM_APRESENTACAO","WWHERE","NR_CHAVE_GRID"],["","GGPROGRAMADORXQUALQUER","Programadorx","G","1120","pasta_treinamento","P","","","","QUALQUER","","","","","","","","","","0","0","0","","999999","","","ID_GRID"],["","GDOWN","Down","G","1121","pasta_treinamento","L","","","","","","","","","","","","","","0","0","0","","0","","","ID_GRID"]],[["1","0"],[["FL_EXCLUIR_GRID","GGPROGRAMADORXQUALQUER","GGPROGRAMADORXQUALQUER_VISIBLE","GDOWN","ID_GRID"]';
+
+    for (var ii = 1; ii < faResp.length; ii++){
+        lcJson += ',["","'+faResp[ii][0]+'","'+faResp[ii][1]+'","'+faResp[ii][2]+'","'+(999999999+ii)+'"]'
+    }
+
+    lcJson += ']],[[""]],[""],[""]]';
+
+    var lnPos = PosCom(loComponent, 1119);
+    ReturnMontarGridFormulario(JSON.parse(lcJson), lnPos, loComponent[lnPos][loComponent[0].indexOf('ID_FORMULARIO')],undefined,'x',false);
+
+}
+
+-----------------------------------------------------------------------------------------------------------------------------------------
+
+--Conexão
+
+192.168.0.23 
+user : sa 
+pass : @mahlerti3050
+
+
+-- Query do bodão prar descobrir o tipo do campo
+
+select id_comp_atividade, mn_nome_comp_generico, fl_armazenamento, tp_comp_generico, wfield, wtable from cnf_componente_atividade 
+where id_comp_atividade =();
+
+
+
+-- Select de um campo texto que está na tabela generica de texto
+select nm_valor from pasta_generico_char
+where id_comp_atividade = 790  
+and nr_pasta = 4574;
+
+
+
+--Select de um campo valor que esta na pasta generica com numero
+select vl_valor from pasta_generico_numeric
+where id_comp_atividade = 825  
+and nr_pasta = 4574;
+
+
+
+-- Select de um campo de data que fica direto na tabela de datas 
+select dt_valor from pasta_generico_date
+where id_comp_atividade = 3549
+and nr_pasta = 4574;
+
+
+-- Select de 3 campos da mesma pasta, porem como eles são gravados em tabelas diferentes temos que usar o left join
+select dtvence.dt_valor, distribuicao.nm_valor, corretora.vl_valor   from pasta pt
+left join pasta_generico_date dtvence  on pt.nr_pasta = dtvence.nr_pasta and dtvence.id_comp_atividade  = 3549
+
+left join pasta_generico_char distribuicao  on pt.nr_pasta = distribuicao.nr_pasta and distribuicao.id_comp_atividade = 790
+
+left join  pasta_generico_numeric corretora on pt.nr_pasta = corretora.nr_pasta and corretora.id_comp_atividade = 825
+where pt.nr_pasta  = 4574;
+
+
+
+-- Pegar campo dentro da grid
+select Cpf.nm_valor from pasta pt
+left join pasta_grid_generica propostaAc on pt.nr_pasta = propostaAc.nr_pasta and propostaAc.id_comp_atividade = 835
+left join pasta_grid_generica_char Cpf on propostaAc.id_grid = Cpf.id_grid and Cpf.id_comp_atividade = 1043
+where pt.nr_pasta = 4574;
+
+Grid : 835
+campo CPF : 1043
+
+
+--Select GRID dentro de GRID
+select vlInde.nm_valor from pasta pt
+left join pasta_grid_generica acordo on  pt.nr_pasta = acordo.nr_pasta and acordo.id_comp_atividade = 835
+left join pasta_grid_generica_grid indeniza on acordo.id_grid = indeniza.id_grid and indeniza.id_comp_atividade = 1401
+left join pasta_grid_generica_char vlInde on indeniza.id_grid_referencia = vlInde.id_grid and vlInde.id_comp_atividade = 1590
+where pt.nr_pasta = 4574;
+
+
+
+
+
+-- Selec de valor do campo combo
+select tpApolice.nm_valor from pasta pt
+left join pasta_generico_numeric tpApo on pt.nr_pasta = tpApo.nr_pasta and tpApo.id_comp_atividade = 1266
+left join tabela_grid_char tpApolice on  tpApo.vl_valor = tpApolice.id_grid and tpApolice.id_comp_atividade = 1271
+where pt.nr_pasta = 4574;
+
+
+(pasta)Tipo de Apólice : 1266
+(tabela)Tipo de Apólice : 1271
+
+
+
+-- Select de um combo que está numa tabela fisica de uma grid dentro de outro
+select tpContato.nm_valor from pasta pt
+left join pasta_grid_generica gdGarantido      on pt.nr_pasta         = gdGarantido.nr_pasta         and gdGarantido.id_comp_atividade = 833
+left join pasta_grid_generica_grid gdContato   on gdGarantido.id_grid = gdContato.id_grid            and gdContato.id_comp_atividade = 721
+left join pasta_grid_generica_numeric cContato on cContato.id_grid    = gdContato.id_grid_referencia and cContato.id_comp_atividade = 723
+left join tabela_grid_char tpContato           on tpContato.id_grid   = cContato.vl_valor            and tpContato.id_comp_atividade = 1143
+where pt.nr_pasta = 4574;
+
+
+
+
+(grid)Garantido : 833
+(grid_de_grid) : 721
+(pasta)Tipo de Contato : 723
+(tabela)Tipo de Contato : 1143
+
+
+
+
+--Select de Campo de Grid dentro de Grid dentro de uma tabla 
+
+Select tbEndereco.tp_endereco from pasta pt
+left join pasta_grid_generica gdGarantido on pt.nr_pasta = gdGarantido.nr_pasta and gdGarantido.id_comp_atividade = 833
+left join pasta_grid_generica_grid gdEnd on gdGarantido.id_grid = gdEnd.id_grid and gdEnd.id_comp_atividade = 726
+left join pasta_grid_generica_numeric EndGarantido on EndGarantido.id_grid = gdEnd.id_grid_referencia and EndGarantido.id_comp_atividade= 1231
+left join tipo_endereco tbEndereco on tbEndereco.id_tp_endereco = EndGarantido.vl_valor
+where pt.nr_pasta = 4574; 
+
+
+
+(pasta)Tipo Endereço : 1231
+(grid)Endereço : 833
+(grid2) Endereço Garantido : 726
+(tabela)Endereço : 1141
+
+
+
+
+-- Select do campo tipo de Locação dentro da grid do garantido
+
+Select tpLocacao.vl_valor from pasta pt
+left join pasta_grid_generica gdGarantido on pt.nr_pasta = gdGarantido.nr_pasta  and gdGarantido.id_comp_atividade = 833
+left join pasta_grid_generica_numeric scLocacao on scLocacao.id_grid = gdGarantido.id_grid and scLocacao.id_comp_atividade = 1403
+left join tabela_grid_char tpLocacao on tpLocacao.id_grid = scLocacao.vl_valor and tpLocacao.id_comp_atividade = 1407
+where pt.nr_pasta = 4574;
+
+
+
+gdGarantido.*, '----', scLocacao.*, '----', tpLocacao.* 
+(pasta)Tipo Locação : 1403
+(grid)Endereço : 833
+(grid2) Endereço Garantido : 726
+(tabela)Locação : 1407
+
+
+
+
+
+
+
+
+
+select tpPessoa.id_grid from pasta pt
+left join pasta_grid_generica gdGarantido on pt.nr_pasta = gdGarantido.nr_pasta and gdGarantido.id_comp_atividade = 833
+left join pasta_grid_generica_numeric tpPessoa on tpPessoa.id_grid = gdGarantido.id_grid and tpPessoa.id_comp_atividade = 1758
+left join tabela_grid_char tbTPessoa on tbTPessoa.nm_valor = tpPessoa.id_grid and tbTPessoa.id_comp_atividade = 2600
+where pt.nr_pasta = 4574;
+
+
+
+(Grid) Garantido : 833
+(Pasta) Tipo Pessoa : 1758
+(tabela) Tipo Pessoa : 2600
+
+
+
+
+
+
+
+select nApolice.nm_valor, vlAlugue.vl_valor, garantido.nome, tipoTelefone.tp_telefone, vlIndiza.vl_valor, coberturaIndeniza.nm_valor from pasta pt
+left join pasta_generico_char nApolice on nApolice.nr_pasta  = pt.nr_pasta and nApolice.id_comp_atividade = 552
+left join pasta_generico_numeric vlAlugue on vlAlugue.nr_pasta = pt.nr_pasta and vlAlugue.id_comp_atividade = 802
+
+left join pasta_grid_generica gdGarantido on gdGarantido.nr_pasta = pt.nr_pasta and gdGarantido.id_comp_atividade = 833
+left join pasta_grid_generica_pessoa tbfPessoa on tbfPessoa.id_grid = gdGarantido.id_grid and tbfPessoa.id_comp_atividade = 1023 
+left join pessoa garantido on garantido.NR_CONTROLE = tbfPessoa.NR_CONTROLE 
+
+
+left join pasta_grid_generica_grid gdContato on gdContato.id_grid = gdGarantido.id_grid and gdContato.id_comp_atividade = 721
+left join pasta_grid_generica_numeric tpContato on tpContato.id_grid = gdContato.id_grid_referencia and tpContato.id_comp_atividade = 723
+left join tipo_telefone tipoTelefone on tipoTelefone.id_tp_telefone = tpContato.vl_valor 
+
+
+left join pasta_grid_generica gdIndeniza on gdIndeniza.nr_pasta = pt.nr_pasta and gdIndeniza.id_comp_atividade = 873
+left join pasta_grid_generica_numeric vlIndiza on vlIndiza.id_grid = gdIndeniza.id_grid and vlIndiza.id_comp_atividade = 874
+
+
+left join pasta_grid_generica_grid gdCbtIndniza on gdCbtIndniza.id_grid = gdIndeniza.id_grid and gdCbtIndniza.id_comp_atividade = 876
+left join pasta_grid_generica_char coberturaIndeniza on coberturaIndeniza.id_grid = gdCbtIndniza.id_grid_referencia and coberturaIndeniza.id_comp_atividade = 877
+
+
+where pt.nr_pasta=4574;
+
+
+
+-- Pasta : 4574
+
+-- Nº Apólice (pasta): 552 texto
+
+-- valor do aluguel (pasta): 802 Valor
+
+-- Grid do Garantido : 833 grid
+
+-- Garantido (grid): 1023 Pessoa
+
+-- Grid onde fica os tipos de contato (grid) : 721 Grid
+
+-- tipo de contato (grid): 723 Combo
+
+-- Grid de Indenizações : 873 grid
+
+-- Valor da Indenização (grid): 874 valor
+
+-- Cobertura Indenizada (grid): 877 texto
+
+-- 1143
+
+-- 876
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------
+Only
+
+PASTA 
+SUSEP : 794
+RAMO : 798
+
+
+GRID-GARANTIDO¹
+CPF-CNPJ : 715
+Contato principal : 1024
+
+
+GRID-EMAILS²
+EMAIL : 725
+
+GRID-PROPOSTA¹
+NUMERO CONTRATO : 1042
+COMPLEMENTO : 1761
+TIPO IDENTIFICAÇÃO : 3831
+
+
+
+SELECT SUSEP.nm_valor SUSEP_p,
+							ramo.nm_valor ramo_p,
+							Cpf.nm_valor cpf_g,
+							cmpEmail.nm_valor email_g,
+							NContrato.nm_valor Numero_do_Contrato_pro,
+							COMPLEMENTO.nm_valor COMPLEMENTO_pro,
+							IDENTIFIC.nm_valor Tipo_de_Identificacao_pro,
+							TotalAcordo.vl_valor Total_do_acordo_pro,
+							DataProposta.dt_valor Data_da_Proposta_pro,
+							contato.nm_valor contato_pro
+FROM pasta pt
+LEFT JOIN pasta_generico_char SUSEP ON SUSEP.nr_pasta = pt.nr_pasta
+AND SUSEP.id_comp_atividade = 794
+LEFT JOIN pasta_generico_char ramo ON ramo.nr_pasta = pt.nr_pasta
+AND ramo.id_comp_atividade = 798
+LEFT JOIN pasta_grid_generica gdGarantido ON gdGarantido.nr_pasta = pt.nr_pasta
+AND gdGarantido.id_comp_atividade = 833
+LEFT JOIN pasta_grid_generica_char Cpf ON Cpf.id_grid = gdGarantido.id_grid
+AND Cpf.id_comp_atividade = 715
+LEFT JOIN pasta_grid_generica_char contato ON contato.id_grid = gdGarantido.id_grid
+AND contato.id_comp_atividade = 1024
+LEFT JOIN pasta_grid_generica_grid emails ON emails.id_grid = gdGarantido.id_grid
+AND emails.id_comp_atividade = 72
+4LEFT JOIN pasta_grid_generica_char cmpEmail ON cmpEmail.id_grid = emails.id_grid_referencia
+AND cmpEmail.id_comp_atividade = 725
+-- LEFT JOIN pasta_grid_generica GdProposta ON GdProposta.nr_pasta = pt.nr_pasta
+-- AND GdProposta.id_comp_atividade = 835
+left join vwCaguei Olha on Olha.nr_pasta = pt.nr_pasta
+LEFT JOIN pasta_grid_generica_char NContrato ON NContrato.id_grid = Olha.id_grid
+AND NContrato.id_comp_atividade = 1042
+LEFT JOIN pasta_grid_generica_char COMPLEMENTO ON COMPLEMENTO.id_grid = Olha.id_grid
+AND COMPLEMENTO.id_comp_atividade = 1761
+LEFT JOIN pasta_grid_generica_char IDENTIFIC ON IDENTIFIC.id_grid = Olha.id_grid
+AND IDENTIFIC.id_comp_atividade = 3831
+LEFT JOIN pasta_grid_generica_numeric TotalAcordo ON TotalAcordo.id_grid = Olha.id_grid
+AND TotalAcordo.id_comp_atividade = 864
+LEFT JOIN pasta_grid_generica_date DataProposta ON DataProposta.id_grid = Olha.id_grid
+AND DataProposta.id_comp_atividade = 866
+WHERE pt.nr_pasta = 4574;
+
+
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------
+
+
+SELECT sum(TotalAcordo.vl_valor) Valor_Total_Acordo,
+							pt.nr_pasta Numero_Pasta
+FROM pasta pt
+LEFT JOIN pasta_grid_generica GdProposta ON GdProposta.nr_pasta = pt.nr_pasta
+AND GdProposta.id_comp_atividade = 835
+LEFT JOIN pasta_grid_generica_numeric TotalAcordo ON TotalAcordo.id_grid = GdProposta.id_grid
+AND TotalAcordo.id_comp_atividade = 864
+WHERE pt.nr_pasta = 4574
+GROUP BY pt.nr_pasta;
+
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------
+
+
+Select max(Proposta.id_grid) Ultimo, pt.nr_pasta Numero_Pasta from pasta pt
+left join pasta_grid_generica Proposta on Proposta.nr_pasta = pt.nr_pasta and Proposta.id_comp_atividade = 835
+left join pasta_grid_generica_date Datap on Datap.id_grid = Proposta.id_grid and Datap.id_comp_atividade = 866
+where pt.nr_pasta = 4574
+GROUP BY pt.nr_pasta;
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------
+
+
+create view vwCaguei asSelect max(Proposta.id_grid) Ultimo, pt.nr_pasta Numero_Pasta from pasta pt
+left join pasta_grid_generica Proposta on Proposta.nr_pasta = pt.nr_pasta and Proposta.id_comp_atividade = 835
+left join pasta_grid_generica_date Datap on Datap.id_grid = Proposta.id_grid and Datap.id_comp_atividade = 866
+GROUP BY pt.nr_pasta;
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------
+
+
